@@ -1,0 +1,406 @@
+{
+  "name": "Elroot Dot Matrix",
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "loaders",
+      "name": "Loaders & progress"
+    },
+    {
+      "id": "signals",
+      "name": "Signals & waves"
+    },
+    {
+      "id": "geometry",
+      "name": "Geometry & 3D"
+    },
+    {
+      "id": "generative",
+      "name": "Generative patterns"
+    },
+    {
+      "id": "tech",
+      "name": "Tech & data"
+    },
+    {
+      "id": "interface",
+      "name": "Interface & status"
+    },
+    {
+      "id": "led-type",
+      "name": "Type & LED signs"
+    },
+    {
+      "id": "nature",
+      "name": "Nature & weather"
+    },
+    {
+      "id": "space",
+      "name": "Space"
+    },
+    {
+      "id": "particles",
+      "name": "Particles & physics"
+    },
+    {
+      "id": "celebrations",
+      "name": "Celebrations"
+    },
+    {
+      "id": "backgrounds",
+      "name": "Backgrounds"
+    }
+  ],
+  "arts": [
+    {
+      "id": "pipeline",
+      "name": "Packet Pipeline",
+      "category": "loaders",
+      "fit": "banner",
+      "shows": "A packet runs along six stages and lights each one it passes.",
+      "use": "Shows a job moving through its steps: a build, an order or an onboarding flow."
+    },
+    {
+      "id": "chase-ring",
+      "name": "Chase Ring",
+      "category": "loaders",
+      "fit": "icon",
+      "shows": "Three dots chase each other round a ring, the leader brightest.",
+      "use": "A loading indicator for a button, a card or a whole screen while data arrives."
+    },
+    {
+      "id": "hop-trio",
+      "name": "Hop Trio",
+      "category": "loaders",
+      "fit": "icon",
+      "shows": "Three dots hop one after another, like someone thinking.",
+      "use": "The 'still working on it' moment in a chat or an AI reply."
+    },
+    {
+      "id": "wave",
+      "name": "Scope Wave",
+      "category": "signals",
+      "fit": "card",
+      "shows": "An oscilloscope trace that shifts as the signal changes.",
+      "use": "Pages about hardware, sensors, audio or anything that gets measured."
+    },
+    {
+      "id": "pulse",
+      "name": "Heartbeat Line",
+      "category": "signals",
+      "fit": "banner",
+      "shows": "A heart monitor trace that keeps running across the screen.",
+      "use": "Uptime pages, health checks and monitoring dashboards."
+    },
+    {
+      "id": "ripple",
+      "name": "Ripple",
+      "category": "signals",
+      "fit": "icon",
+      "shows": "Rings spread outward from one bright point.",
+      "use": "An empty state, or a screen waiting for a device to connect."
+    },
+    {
+      "id": "radar",
+      "name": "Radar Sweep",
+      "category": "signals",
+      "fit": "icon",
+      "shows": "A beam turns around a round screen and leaves fading blips.",
+      "use": "Search and discovery screens: finding devices, people or results nearby."
+    },
+    {
+      "id": "equaliser",
+      "name": "Equaliser",
+      "category": "signals",
+      "fit": "card",
+      "shows": "Columns of dots bounce like an audio level meter.",
+      "use": "Audio players, podcasts and voice features."
+    },
+    {
+      "id": "cube",
+      "name": "Turning Cube",
+      "category": "geometry",
+      "fit": "icon",
+      "shows": "A wireframe cube turning to show every side.",
+      "use": "Pages about building blocks: platforms, SDKs and 3D work."
+    },
+    {
+      "id": "merge",
+      "name": "Merging Rings",
+      "category": "geometry",
+      "fit": "card",
+      "shows": "Two rings drift together until they overlap, then part.",
+      "use": "Integrations and partnerships, or anything that joins two systems."
+    },
+    {
+      "id": "spiral",
+      "name": "Spiral",
+      "category": "geometry",
+      "fit": "icon",
+      "shows": "A spiral arm winds outward and keeps turning.",
+      "use": "A calm loader, or a focal point in a landing section."
+    },
+    {
+      "id": "lissajous",
+      "name": "Lissajous",
+      "category": "geometry",
+      "fit": "card",
+      "shows": "A Lissajous curve whose loops slowly shift as the phase drifts.",
+      "use": "Electronics and engineering pages that want a lab feel."
+    },
+    {
+      "id": "plasma",
+      "name": "Plasma",
+      "category": "generative",
+      "fit": "background",
+      "shows": "Soft blobs of brightness flow and mix across the grid.",
+      "use": "A soft moving backdrop behind a hero headline."
+    },
+    {
+      "id": "truchet",
+      "name": "Truchet Tiles",
+      "category": "generative",
+      "fit": "background",
+      "shows": "Quarter-circle tiles flip one by one and redraw the maze.",
+      "use": "A patterned background for developer tools and puzzle games."
+    },
+    {
+      "id": "network",
+      "name": "Network",
+      "category": "tech",
+      "fit": "banner",
+      "shows": "A network with pulses travelling along its links.",
+      "use": "Infrastructure, APIs and connected systems."
+    },
+    {
+      "id": "neural",
+      "name": "Neural Net",
+      "category": "tech",
+      "fit": "card",
+      "shows": "A small neural network with signals running from inputs to outputs.",
+      "use": "AI features, model pages and machine-learning products."
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "category": "tech",
+      "fit": "icon",
+      "shows": "A stack of database disks, each written to in turn.",
+      "use": "Data storage, backups and sync features."
+    },
+    {
+      "id": "chip",
+      "name": "Chip",
+      "category": "tech",
+      "fit": "icon",
+      "shows": "A chip with pins, sending signal rings outward.",
+      "use": "IoT, embedded systems and hardware products."
+    },
+    {
+      "id": "bars",
+      "name": "Rising Bars",
+      "category": "tech",
+      "fit": "card",
+      "shows": "Bars rise to their measured height against a dashed target line.",
+      "use": "Analytics, reports and goal tracking."
+    },
+    {
+      "id": "layers",
+      "name": "Layers",
+      "category": "tech",
+      "fit": "icon",
+      "shows": "Three platform layers breathe apart and settle again.",
+      "use": "Platforms and stacks: anything built in tiers."
+    },
+    {
+      "id": "window",
+      "name": "App Window",
+      "category": "tech",
+      "fit": "card",
+      "shows": "An app window whose selected row moves down the list.",
+      "use": "Software products and app showcases."
+    },
+    {
+      "id": "gear",
+      "name": "Gear",
+      "category": "tech",
+      "fit": "icon",
+      "shows": "A gear turning steadily, bright rim and dim body.",
+      "use": "Settings screens, automation and engineering services."
+    },
+    {
+      "id": "shield",
+      "name": "Shield Scan",
+      "category": "interface",
+      "fit": "icon",
+      "shows": "A shield with a tick, and a scan line passing over it.",
+      "use": "Security, privacy and trust pages."
+    },
+    {
+      "id": "message",
+      "name": "Typing Bubble",
+      "category": "interface",
+      "fit": "icon",
+      "shows": "A message bubble with someone typing.",
+      "use": "Chat, support and 'someone is typing' states."
+    },
+    {
+      "id": "checklist",
+      "name": "Checklist",
+      "category": "interface",
+      "fit": "card",
+      "shows": "A checklist that ticks itself off, line by line.",
+      "use": "Onboarding, task lists and setup progress."
+    },
+    {
+      "id": "done-tick",
+      "name": "Done Tick",
+      "category": "interface",
+      "fit": "icon",
+      "shows": "A circle draws itself, then a tick appears inside it.",
+      "use": "Success screens after a payment, a sign-up or a saved form."
+    },
+    {
+      "id": "upload",
+      "name": "Upload",
+      "category": "interface",
+      "fit": "icon",
+      "shows": "An arrow rises out of a tray, again and again.",
+      "use": "File upload areas and sync status."
+    },
+    {
+      "id": "notfound",
+      "name": "404",
+      "category": "led-type",
+      "fit": "banner",
+      "shows": "The number 404 in a dot font, with a scan line passing down.",
+      "use": "A 404 page that still looks like the rest of your product."
+    },
+    {
+      "id": "pages",
+      "name": "Typing Page",
+      "category": "led-type",
+      "fit": "icon",
+      "shows": "A page whose lines type themselves out, then start over.",
+      "use": "Writing, publishing and documentation tools."
+    },
+    {
+      "id": "marquee",
+      "name": "Marquee",
+      "category": "led-type",
+      "fit": "banner",
+      "shows": "Your own text scrolling across, like an LED sign.",
+      "use": "Announcements, ticker strips and event signs, in your own words.",
+      "options": [
+        {
+          "key": "text",
+          "type": "text",
+          "default": "HELLO WORLD"
+        }
+      ]
+    },
+    {
+      "id": "clock",
+      "name": "Clock",
+      "category": "led-type",
+      "fit": "banner",
+      "shows": "A digital clock showing the viewer's local time, its colon blinking.",
+      "use": "Status screens, kiosks and dashboards that show the time.",
+      "options": [
+        {
+          "key": "hour12",
+          "type": "toggle",
+          "default": false
+        }
+      ]
+    },
+    {
+      "id": "rainfall",
+      "name": "Rainfall",
+      "category": "nature",
+      "fit": "background",
+      "shows": "Rain falls in thin streaks and splashes where it lands.",
+      "use": "Weather apps and calm, rainy backdrops."
+    },
+    {
+      "id": "sunrise",
+      "name": "Sunrise",
+      "category": "nature",
+      "fit": "card",
+      "shows": "The sun rises over the horizon while its rays turn slowly.",
+      "use": "Morning check-ins, travel and wellness apps."
+    },
+    {
+      "id": "orbit",
+      "name": "Orbit Core",
+      "category": "space",
+      "fit": "card",
+      "shows": "A dense core with three nodes on a tilted orbit.",
+      "use": "AI products, or anything with a core and moving parts."
+    },
+    {
+      "id": "ringed-planet",
+      "name": "Ringed Planet",
+      "category": "space",
+      "fit": "card",
+      "shows": "A planet with a tilted ring that passes in front of it and behind.",
+      "use": "Space themes, science content and kids' learning apps."
+    },
+    {
+      "id": "comet",
+      "name": "Comet",
+      "category": "space",
+      "fit": "banner",
+      "shows": "A comet streaks past the stars, its tail fading behind it.",
+      "use": "Launch banners and 'something new' announcements."
+    },
+    {
+      "id": "fireflies",
+      "name": "Fireflies",
+      "category": "particles",
+      "fit": "background",
+      "shows": "Small lights wander about and blink on and off.",
+      "use": "A gentle night-time background for calm pages."
+    },
+    {
+      "id": "pendulum-wave",
+      "name": "Pendulum Wave",
+      "category": "particles",
+      "fit": "banner",
+      "shows": "A row of pendulums swings at slightly different speeds and forms waves.",
+      "use": "A banner about timing, rhythm or physics."
+    },
+    {
+      "id": "fireworks",
+      "name": "Fireworks",
+      "category": "celebrations",
+      "fit": "card",
+      "shows": "Rockets rise and burst into rings of sparks that fade.",
+      "use": "Launch days, New Year and success screens."
+    },
+    {
+      "id": "heart",
+      "name": "Heart",
+      "category": "celebrations",
+      "fit": "icon",
+      "shows": "A heart that beats and sends out a ring with each beat.",
+      "use": "Likes, favourites and thank-you pages."
+    },
+    {
+      "id": "warp-stars",
+      "name": "Warp Stars",
+      "category": "backgrounds",
+      "fit": "background",
+      "shows": "Stars stream out from the centre, as if at warp speed.",
+      "use": "A fast-moving hero for launches and sci-fi themes."
+    },
+    {
+      "id": "breathing-grid",
+      "name": "Breathing Grid",
+      "category": "backgrounds",
+      "fit": "background",
+      "shows": "The grid brightens and dims in slow waves from the centre.",
+      "use": "A quiet backdrop behind a sign-in form."
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+// Elroot Dot Matrix security scan. Exits 1 on anything that must never be in this repository:
+// secrets, private details, or files outside the expected layout. It runs before every push
+// (.githooks/pre-push), in CI, and on every export that writes this repository.
+//
+//   node scripts/scan.mjs [--root <dir>] [--history]
+//
+// --history also scans every commit (messages, authors and changes), not only the current files.
+import { execFileSync } from 'node:child_process'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative, sep } from 'node:path'
+
+const args = process.argv.slice(2)
+const root = args.includes('--root') ? args[args.indexOf('--root') + 1] : process.cwd()
+
+// Patterns are assembled at run time, so this file never matches its own rules.
+const j = (...parts) => parts.join('')
+const BRAND = j('elr', 'oot')
+
+// The only places the company name may appear: its legal name (licence), the product name, and the
+// public links to the library, the MCP server and this repository.
+const BRAND_OK = [
+  j('https://', BRAND, 'labs.com/opensource/dotmatrix'),
+  j('https://', BRAND, 'labs.com/mcp'),
+  j('github.com/', BRAND, 'labs/dotmatrix'),
+  j('E', BRAND.slice(1), ' Labs (OPC) Private Limited'),
+  j('E', BRAND.slice(1), ' Dot Matrix'),
+  j('E', BRAND.slice(1), ' Labs'),
+  j(BRAND, '-dotmatrix'),
+  // the GitHub account that owns this repository, as it appears in commit authors
+  j('+', BRAND, 'labs@users.noreply.github.com'),
+  j(BRAND, 'labs <'),
+]
+// Addresses that may appear in commit metadata: GitHub's private no-reply addresses.
+const EMAIL_OK = [/@users\.noreply\.github\.com$/i, /^noreply@github\.com$/i, new RegExp(j('^nore', 'ply@anthr', 'opic\\.com$'), 'i')]
+
+const RULES = [
+  ['private key', new RegExp(j('-----BEGIN [A-Z ]*', 'PRIVATE KEY-----'))],
+  ['GitHub token', new RegExp(j('\\b(gh[pousr]', '_[A-Za-z0-9]{30,}|github', '_pat_[A-Za-z0-9_]{20,})'))],
+  ['AWS key', new RegExp(j('\\bA(KI|SI)', 'A[0-9A-Z]{16}\\b'))],
+  ['Google key', new RegExp(j('\\bAI', 'za[0-9A-Za-z_-]{35}'))],
+  ['Slack token', new RegExp(j('\\bxo', 'x[abprs]-[0-9A-Za-z-]{10,}'))],
+  ['API key', new RegExp(j('\\bsk', '-(?:ant-|live_|test_|proj-)?[A-Za-z0-9_-]{20,}'))],
+  ['JWT', new RegExp(j('\\beyJ[A-Za-z0-9_-]{10,}', '\\.eyJ[A-Za-z0-9_-]{10,}'))],
+  ['captcha key', new RegExp(j('\\b0x', '4AAAA[A-Za-z0-9_-]{10,}'))],
+  ['credential', new RegExp(j('(pass', 'word|sec', 'ret|tok', 'en|api[_-]?key)\\s*[:=]\\s*[\'"][^\'"\\s]{8,}'), 'i')],
+  ['private host', new RegExp(j('(\\bstag', 'ing\\.|\\.wor', 'kers\\.dev|\\.pag', 'es\\.dev|clou', 'dflareaccess\\.com|\\blocal', 'host:\\d)'), 'i')],
+  ['long hex id', /\b[0-9a-f]{32,}\b/i],
+  ['UUID', /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i],
+  ['local path', new RegExp(j('(/Us', 'ers/|/ho', 'me/[a-z]|[A-Z]:\\\\Us', 'ers)'))],
+  ['company number', new RegExp(j('\\b[LU]\\d{5}[A-Z]{2}', '\\d{4}[A-Z]{3}\\d{6}\\b|\\b\\d{2}[A-Z]{5}\\d{4}', '[A-Z][1-9A-Z]Z[0-9A-Z]\\b'))],
+]
+const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g
+
+// Every file this repository may hold.
+const LAYOUT = [
+  /^(README|SECURITY|CONTRIBUTING)\.md$/,
+  /^LICENSE$/,
+  /^package\.json$/,
+  /^catalog\.json$/,
+  /^\.gitignore$/,
+  /^\.githooks\/pre-push$/,
+  /^\.github\/workflows\/ci\.yml$/,
+  /^\.github\/dependabot\.yml$/,
+  /^src\/(index|runtime|helpers)\.mjs$/,
+  /^src\/arts\/[a-z0-9-]+\.mjs$/,
+  /^scripts\/(scan|lint)\.mjs$/,
+  /^test\/[a-z0-9-]+\.mjs$/,
+  /^examples\/index\.html$/,
+]
+const MAX_BYTES = 200_000
+const PINNED = /(\buses:\s*[\w./-]+@)[0-9a-f]{40}\b/
+
+/** Problems in one piece of text, as "where: rule (match)". */
+function scanText(text, where) {
+  const found = []
+  const lines = text.split('\n')
+  lines.forEach((raw, i) => {
+    const at = `${where}:${i + 1}`
+    const line = raw.replace(PINNED, '$1') // a GitHub action pinned to its commit is not a secret
+    for (const [name, re] of RULES) {
+      const m = line.match(re)
+      if (m) found.push(`${at}: ${name} (${m[0].slice(0, 24)})`)
+    }
+    if (line.includes('@')) for (const m of line.matchAll(EMAIL)) if (!EMAIL_OK.some((ok) => ok.test(m[0]))) found.push(`${at}: email address (${m[0]})`)
+    let rest = line
+    for (const ok of BRAND_OK) rest = rest.split(ok).join('')
+    if (rest.toLowerCase().includes(BRAND)) found.push(`${at}: company name outside the public phrases`)
+  })
+  return found
+}
+
+function files(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
+    if (d.name === '.git') return []
+    const p = join(dir, d.name)
+    return d.isDirectory() ? files(p) : [p]
+  })
+}
+
+const problems = []
+let count = 0
+for (const file of files(root)) {
+  const rel = relative(root, file).split(sep).join('/')
+  count++
+  if (!LAYOUT.some((re) => re.test(rel))) {
+    problems.push(`${rel}: not an expected file`)
+    continue
+  }
+  if (statSync(file).size > MAX_BYTES) {
+    problems.push(`${rel}: larger than ${MAX_BYTES} bytes`)
+    continue
+  }
+  problems.push(...scanText(readFileSync(file, 'utf8'), rel))
+}
+
+if (args.includes('--history')) {
+  // commit ids are left out of the text: they are 40 hex characters and would read as an id
+  const log = execFileSync('git', ['-C', root, 'log', '--all', '-p', '--format=author %an <%ae>%ncommitter %cn <%ce>%n%n%B'], {
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  })
+  problems.push(...scanText(log, 'history'))
+}
+
+if (problems.length) {
+  console.error(`scan: ${problems.length} problem(s)\n${problems.join('\n')}`)
+  process.exit(1)
+}
+console.log(`scan: ${count} files clean${args.includes('--history') ? ', history clean' : ''}`)

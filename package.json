@@ -1,0 +1,15 @@
+{
+  "name": "elroot-dotmatrix",
+  "version": "1.0.0",
+  "description": "Dot-matrix animations for the web, drawn on a canvas.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "src/index.mjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.mjs",
+    "lint": "node scripts/lint.mjs",
+    "scan": "node scripts/scan.mjs --history"
+  }
+}
