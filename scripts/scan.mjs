@@ -27,10 +27,9 @@ const BRAND_OK = [
   j('E', BRAND.slice(1), ' Dot Matrix'),
   j('E', BRAND.slice(1), ' Labs'),
   j(BRAND, '-dotmatrix'),
-  // the GitHub account that owns this repository, as it appears in commit authors
-  j('+', BRAND, 'labs@users.noreply.github.com'),
-  j(BRAND, 'labs <'),
 ]
+// The GitHub account that owns this repository, exactly as git records it as an author or committer.
+const OWNER = new RegExp(j('^(author|committer) ', BRAND, 'labs <\\d+\\+', BRAND, 'labs@users\\.noreply\\.github\\.com>$'), 'gm')
 // Addresses that may appear in commit metadata: GitHub's private no-reply addresses.
 const EMAIL_OK = [/@users\.noreply\.github\.com$/i, /^noreply@github\.com$/i, new RegExp(j('^nore', 'ply@anthr', 'opic\\.com$'), 'i')]
 
@@ -69,7 +68,8 @@ const LAYOUT = [
   /^examples\/index\.html$/,
 ]
 const MAX_BYTES = 200_000
-const PINNED = /(\buses:\s*[\w./-]+@)[0-9a-f]{40}\b/
+// a workflow step pinned to an action's commit; also as a +/- line in a diff
+const PINNED = /^([+ -]?\s*(?:-\s*)?uses:\s*[\w./-]+@)[0-9a-f]{40}(?=\s|$)/
 
 /** Problems in one piece of text, as "where: rule (match)". */
 function scanText(text, where) {
@@ -116,11 +116,11 @@ for (const file of files(root)) {
 
 if (args.includes('--history')) {
   // commit ids are left out of the text: they are 40 hex characters and would read as an id
-  const log = execFileSync('git', ['-C', root, 'log', '--all', '-p', '--format=author %an <%ae>%ncommitter %cn <%ce>%n%n%B'], {
+  const log = execFileSync('git', ['-C', root, 'log', '--all', '-p', '-m', '--format=author %an <%ae>%ncommitter %cn <%ce>%n%n%B'], {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   })
-  problems.push(...scanText(log, 'history'))
+  problems.push(...scanText(log.replace(OWNER, '$1 (owner)'), 'history'))
 }
 
 if (problems.length) {

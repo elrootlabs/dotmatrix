@@ -42,8 +42,12 @@ const PLANTED = {
   credential: j('pass', 'word = "hunter2hunter2"'),
   'email address': j('someone', '@', 'example.com'),
   'company name outside the public phrases': j('see the e', 'lroot ', 'admin panel'),
+  // the account name is allowed only as a commit author, not in a file
+  'company name outside the public phrases ': j('author e', 'lrootlabs <1+e', 'lrootlabs@users.noreply.github.com>'),
   'private host': j('https://stag', 'ing.', 'example.org'),
   'long hex id': j('0123456789abcdef', '0123456789abcdef'),
+  // the pinned-action allowance holds only for a workflow step at the start of a line
+  'long hex id ': j('see uses: a/b@', '0123456789abcdef'.repeat(2), '01234567'),
   'local path': j('/Us', 'ers/', 'someone/project'),
   'company number': j('U1', '2345KA2020PTC123456'), // made up, the shape of an Indian company number
 }
@@ -53,7 +57,7 @@ for (const [rule, value] of Object.entries(PLANTED)) {
     const dir = tree({ 'README.md': `hello\n${value}\n` })
     const r = run(dir)
     assert.equal(r.status, 1, `${rule} was not caught`)
-    assert.match(r.stderr, new RegExp(rule))
+    assert.match(r.stderr, new RegExp(rule.trim()))
     rmSync(dir, { recursive: true })
   })
 }
@@ -82,5 +86,35 @@ test('--history finds a secret that was committed and later removed', () => {
   assert.equal(r.status, 1)
   assert.match(r.stderr, /history:.*GitHub token/)
   assert.doesNotMatch(r.stderr, /company name|email/)
+  rmSync(dir, { recursive: true })
+})
+
+test('--history finds a secret added and removed inside merge commits', () => {
+  const dir = tree({ 'README.md': 'one\n' })
+  const git = (...a) =>
+    execFileSync('git', ['-C', dir, '-c', j('user.name=e', 'lrootlabs'), '-c', j('user.email=1+e', 'lrootlabs@users.noreply.github.com'), ...a])
+  const side = (name, file) => {
+    git('checkout', '-qb', name, 'main~0')
+    writeFileSync(join(dir, file), `${name}\n`)
+    git('add', '.')
+    git('commit', '-qm', name)
+    git('checkout', '-q', 'main')
+  }
+  // each merge changes README.md while resolving, so only the merge commits' own diffs show the secret
+  const merge = (name, readme) => {
+    git('merge', '-q', '--no-ff', '--no-commit', name)
+    writeFileSync(join(dir, 'README.md'), readme)
+    git('add', '.')
+    git('commit', '-qm', `merge ${name}`)
+  }
+  git('init', '-q', '-b', 'main')
+  git('add', '.')
+  git('commit', '-qm', 'one')
+  side('a', 'CONTRIBUTING.md')
+  merge('a', `one\n${PLANTED['AWS key']}\n`)
+  side('b', 'SECURITY.md')
+  merge('b', 'one\n')
+  assert.equal(run(dir).status, 0)
+  assert.match(run(dir, '--history').stderr, /history:.*AWS key/)
   rmSync(dir, { recursive: true })
 })

@@ -22,6 +22,8 @@ const FORBIDDEN = [
   [/\bnew\s+Function\b/, 'new Function'],
   [/\bdocument\.cookie\b/, 'cookies'],
   [/\b(localStorage|sessionStorage|indexedDB)\b/, 'browser storage'],
+  [/\b(Worker|SharedWorker|importScripts|serviceWorker)\b/, 'workers'],
+  [/createElement\s*\(\s*['"`]script|\.src\s*=/, 'script loading'],
 ]
 
 const walk = (dir) =>
@@ -45,7 +47,7 @@ for (const file of scripts) {
 for (const file of walk(join(root, 'src'))) {
   const text = readFileSync(file, 'utf8')
   for (const [re, name] of FORBIDDEN) if (re.test(text)) problems.push(`${file}: uses ${name}`)
-  for (const m of text.matchAll(/^\s*(?:import|export)\b[^'"\n]*from\s*['"]([^'"]+)['"]/gm))
+  for (const m of text.matchAll(/^\s*(?:import|export)\b(?:[^'"\n]*from)?\s*['"]([^'"]+)['"]/gm))
     if (!m[1].startsWith('./') && !m[1].startsWith('../')) problems.push(`${file}: imports "${m[1]}" (only its own files)`)
 }
 

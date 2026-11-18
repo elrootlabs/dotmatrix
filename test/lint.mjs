@@ -23,3 +23,6 @@ test('a network call fails', () => assert.match(lintOne("export default () => fe
 test('browser storage fails', () => assert.match(lintOne('export default () => localStorage.length\n').stderr, /browser storage/))
 test('an outside import fails', () => assert.match(lintOne("import x from 'left-pad'\nexport default x\n").stderr, /only its own files/))
 test('a syntax error fails', () => assert.match(lintOne('export default ( =>\n').stderr, /does not parse/))
+test('a bare outside import fails', () => assert.match(lintOne("import 'https://cdn.example/x.mjs'\nexport default () => 0\n").stderr, /only its own files/))
+test('a worker fails', () => assert.match(lintOne("export default () => new Worker('./w.mjs')\n").stderr, /uses workers/))
+test('loading a script fails', () => assert.match(lintOne("export default () => document.createElement('script')\n").stderr, /script loading/))
