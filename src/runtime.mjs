@@ -11,7 +11,14 @@ export const DOT_DEFAULTS = {
   shape: 'round', // 'round' or 'square'
   play: true, // false = hold a still frame
   start: 2, // the moment (seconds) the first frame shows
+  autoSpacing: false, // true = on a canvas under 360 px, scale spacing down (min 3 px) so small arts keep their shape
 }
+
+const AUTO_REF = 360
+const AUTO_MIN = 3
+const AUTO_MAX_DOTS = 4000
+/** Smallest short side (px) an art reads at: 32 dots across at the densest auto spacing. */
+export const MIN_SHORT = 32 * AUTO_MIN
 
 const LEVELS = 8
 const LEVEL_V = Array.from({ length: LEVELS }, (_, k) => 0.12 + ((k + 0.5) * 0.88) / LEVELS)
@@ -35,15 +42,20 @@ export function dotFills(o) {
   })
 }
 
-/** Ring colour for the grid: faint white on dark or transparent backgrounds, faint black on light. */
-export function ringColour(o) {
-  const [r, g, b] = o.background ? rgb(o.background) : [0, 0, 0]
+/** Ring colour for the grid: faint white on dark backgrounds, faint black on light. With no background
+ * of its own the art sits on the page, so the page's colour decides (dark when unknown). */
+export function ringColour(o, page = [0, 0, 0]) {
+  const [r, g, b] = o.background ? rgb(o.background) : page
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.1)'
 }
 
 /** Grid layout for a W x H area: dot count, offsets and the unit scale s. */
 export function dotGrid(W, H, o) {
-  const P = o.spacing
+  const short = Math.min(W, H)
+  const P =
+    o.autoSpacing && short > 0 && short < AUTO_REF
+      ? Math.max(Math.min(AUTO_MIN, o.spacing), (o.spacing * short) / AUTO_REF, Math.min(o.spacing, Math.sqrt((W * H) / AUTO_MAX_DOTS)))
+      : o.spacing
   const cols = Math.floor(W / P)
   const rows = Math.floor(H / P)
   return { P, cols, rows, ox: (W - (cols - 1) * P) / 2, oy: (H - (rows - 1) * P) / 2, s: Math.min(W / 2.9, H / 2.2) }
@@ -51,7 +63,23 @@ export function dotGrid(W, H, o) {
 
 /** Brightness level 0..LEVELS-1 for a field value, or -1 for an unlit dot. */
 export const dotLevel = (v) => (v >= 0.12 ? Math.min(LEVELS - 1, (((v - 0.12) * LEVELS) / 0.88) | 0) : -1)
-export const dotRadius = (k, o) => ((1.3 + 1.4 * LEVEL_V[k]) * o.size * o.spacing) / 8
+export const dotRadius = (k, o, P = o.spacing) => ((1.3 + 1.4 * LEVEL_V[k]) * o.size * P) / 8
+
+/** The colour behind the canvas as [r, g, b] (near enough to tell light from dark): the first
+ * ancestor with an opaque background. Reads rgb(), color(srgb …), and the lightness of (ok)lab/lch. */
+export function pageColour(el) {
+  for (; el && window.getComputedStyle; el = el.parentElement) {
+    const c = window.getComputedStyle(el).backgroundColor || ''
+    const m = c.split(/[\s,/()]+/).filter((w) => /^[\d.]+$/.test(w)) // numbers only, not the 3 in display-p3
+    if (m.length < 3 || (m.length > 3 && Number(m[3]) <= 0.5)) continue
+    const n = m.slice(0, 3).map(Number)
+    if (/^oklab|^oklch/.test(c)) return [n[0] * 255, n[0] * 255, n[0] * 255]
+    if (/^lab|^lch/.test(c)) return [n[0] * 2.55, n[0] * 2.55, n[0] * 2.55]
+    return c.startsWith('color(') ? n.map((v) => v * 255) : n
+  }
+  if (!window.getComputedStyle) return undefined
+  return /dark/.test(window.getComputedStyle(document.documentElement).colorScheme || '') ? [0, 0, 0] : [255, 255, 255]
+}
 
 export function mountDots(canvas, field, options, prepare) {
   const ctx = canvas.getContext('2d')
@@ -85,7 +113,7 @@ export function mountDots(canvas, field, options, prepare) {
     }
     if (!o.grid) return
     const rr = (1.8 * g.P) / 8
-    b.strokeStyle = ringColour(o)
+    b.strokeStyle = ringColour(o, o.background ? undefined : pageColour(canvas.parentElement))
     b.lineWidth = 1
     b.beginPath()
     for (let i = 0; i < g.cols; i++)
@@ -114,7 +142,7 @@ export function mountDots(canvas, field, options, prepare) {
         const py = oy + j * P
         const k = dotLevel(field((px - W / 2) / s, (py - H / 2) / s, t, P / s, o, f))
         if (k < 0) continue
-        const r = dotRadius(k, o)
+        const r = dotRadius(k, o, P)
         const path = (paths[k] ??= new Path2D())
         if (o.shape === 'square') path.rect(px - r * 0.886, py - r * 0.886, r * 1.772, r * 1.772)
         else {
@@ -154,6 +182,15 @@ export function mountDots(canvas, field, options, prepare) {
   })
   io.observe(canvas)
   ro.observe(canvas)
+  const retheme = () => {
+    if (o.background) return
+    setup()
+    draw()
+  }
+  const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(retheme)
+  for (const el of [document.documentElement, document.body]) if (el) mo?.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] })
+  const scheme = window.matchMedia('(prefers-color-scheme: dark)')
+  scheme.addEventListener?.('change', retheme)
   return {
     /** Change any options; the rest stay as they are. */
     update(next) {
@@ -166,6 +203,8 @@ export function mountDots(canvas, field, options, prepare) {
       cancelAnimationFrame(raf)
       io.disconnect()
       ro.disconnect()
+      mo?.disconnect()
+      scheme.removeEventListener?.('change', retheme)
     },
   }
 }

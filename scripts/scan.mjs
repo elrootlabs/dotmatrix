@@ -133,18 +133,20 @@ function gifProblems(buf) {
 // a workflow step pinned to an action's commit; also as a +/- line in a diff
 const PINNED = /^([+ -]?\s*(?:-\s*)?uses:\s*[\w./-]+@)[0-9a-f]{40}(?=\s|$)/
 
-/** Problems in one piece of text, as "where: rule (match)". */
+/** Problems in one piece of text, as "where: rule". The history names the commit instead of a line. */
 function scanText(text, where) {
   const found = []
   const lines = text.split('\n')
+  let commit = ''
   lines.forEach((raw, i) => {
-    const at = `${where}:${i + 1}`
+    if (where === 'history' && /^commit [0-9a-f]{7,12}$/.test(raw)) commit = raw.slice(7)
+    const at = commit ? `history (commit ${commit})` : `${where}:${i + 1}`
     const line = raw.replace(PINNED, '$1') // a GitHub action pinned to its commit is not a secret
     for (const [name, re] of RULES) {
       const m = line.match(re)
-      if (m) found.push(`${at}: ${name} (${m[0].slice(0, 24)})`)
+      if (m) found.push(`${at}: ${name}`) // never the matched text: CI logs are public
     }
-    if (line.includes('@')) for (const m of line.matchAll(EMAIL)) if (!EMAIL_OK.some((ok) => ok.test(m[0]))) found.push(`${at}: email address (${m[0]})`)
+    if (line.includes('@')) for (const m of line.matchAll(EMAIL)) if (!EMAIL_OK.some((ok) => ok.test(m[0]))) found.push(`${at}: email address`)
     let rest = line
     for (const ok of BRAND_OK) rest = rest.split(ok).join('')
     if (rest.toLowerCase().includes(BRAND)) found.push(`${at}: company name outside the public phrases`)
@@ -182,7 +184,7 @@ for (const file of files(root)) {
 
 if (args.includes('--history')) {
   // commit ids are left out of the text: they are 40 hex characters and would read as an id
-  const log = execFileSync('git', ['-C', root, 'log', '--all', '-p', '-m', '--format=author %an <%ae>%ncommitter %cn <%ce>%n%n%B'], {
+  const log = execFileSync('git', ['-C', root, 'log', '--all', '-p', '-m', '--format=commit %h%nauthor %an <%ae>%ncommitter %cn <%ce>%n%n%B'], {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   })

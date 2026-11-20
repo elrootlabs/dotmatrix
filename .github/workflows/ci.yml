@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # on a pull request, the pull request's own commits, not the merge commit GitHub makes to
+          # test it: that one never reaches main, and it carries the opener's account details
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0 # the scan reads the whole history
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
