@@ -69,9 +69,67 @@ const LAYOUT = [
   /^media\/demo\.gif$/,
 ]
 const MAX_BYTES = 200_000
-const MAX_GIF_BYTES = 3_000_000
-/** The readable text inside a binary file, where metadata and comments would show. */
+const MAX_GIF_BYTES = 1_000_000
+/** The readable text inside a binary file, a second look after gifProblems. */
 const strings = (buf) => (buf.toString('latin1').match(/[\x20-\x7e]{6,}/g) ?? []).join('\n')
+
+/**
+ * A GIF may hold only frames: images, their timing, and the standard loop block, ending exactly at
+ * the trailer. Comment, plain-text and other application blocks, or bytes after the end, could carry
+ * text a text scan would miss, so any of them fails. That leaves pixels as the only content.
+ */
+function gifProblems(buf) {
+  let i = 6
+  const need = (n) => {
+    if (i + n > buf.length) throw new Error('ends early')
+  }
+  const table = (flags) => {
+    if (flags & 0x80) {
+      const n = 3 * 2 ** ((flags & 7) + 1)
+      need(n)
+      i += n
+    }
+  }
+  const exact = (bytes) => {
+    need(bytes.length)
+    const ok = buf.subarray(i, i + bytes.length).every((b, k) => bytes[k] === null || b === bytes[k])
+    i += bytes.length
+    return ok
+  }
+  try {
+    if (!/^GIF8[79]a$/.test(buf.toString('latin1', 0, 6))) return ['not a GIF']
+    need(7)
+    const screen = buf[i + 4]
+    i += 7
+    table(screen)
+    for (;;) {
+      need(1)
+      const block = buf[i++]
+      if (block === 0x3b) return i === buf.length ? [] : ['bytes after the end of the GIF']
+      if (block === 0x2c) {
+        need(10)
+        const image = buf[i + 8]
+        i += 9
+        table(image)
+        i++ // LZW minimum code size
+        for (let n; (need(1), (n = buf[i++])); ) {
+          need(n)
+          i += n
+        }
+      } else if (block === 0x21 && buf[i] === 0xf9) {
+        i++
+        if (!exact([4, null, null, null, null, 0])) return ['a frame timing block of the wrong size']
+      } else if (block === 0x21 && buf[i] === 0xff) {
+        i++
+        const loop = [11, ...Buffer.from('NETSCAPE2.0'), 3, 1, null, null, 0]
+        if (!exact(loop)) return ['an application block other than the loop setting']
+      } else if (block === 0x21) return [buf[i] === 0xfe ? 'a comment block' : 'a text or unknown extension block']
+      else return ['an unknown block']
+    }
+  } catch {
+    return ['a GIF that ends early']
+  }
+}
 // a workflow step pinned to an action's commit; also as a +/- line in a diff
 const PINNED = /^([+ -]?\s*(?:-\s*)?uses:\s*[\w./-]+@)[0-9a-f]{40}(?=\s|$)/
 
@@ -118,7 +176,7 @@ for (const file of files(root)) {
     continue
   }
   const buf = readFileSync(file)
-  if (gif && !/^GIF8[79]a/.test(buf.toString('latin1', 0, 6))) problems.push(`${rel}: not a GIF`)
+  if (gif) problems.push(...gifProblems(buf).map((p) => `${rel}: ${p}`))
   problems.push(...scanText(gif ? strings(buf) : buf.toString('utf8'), rel))
 }
 

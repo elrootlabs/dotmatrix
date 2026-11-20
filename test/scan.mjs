@@ -62,27 +62,50 @@ for (const [rule, value] of Object.entries(PLANTED)) {
   })
 }
 
-// a minimal GIF: header, a 1 x 1 screen, an optional comment block, then the end marker
-const gif = (comment = '') =>
-  Buffer.concat([
-    Buffer.from('GIF89a'),
-    Buffer.from([1, 0, 1, 0, 0, 0, 0]),
-    comment ? Buffer.concat([Buffer.from([0x21, 0xfe, comment.length]), Buffer.from(comment), Buffer.from([0])]) : Buffer.alloc(0),
-    Buffer.from([0x3b]),
-  ])
+// A minimal GIF the way the demo is built: header, a 1 x 1 screen with a 2-colour table, the loop
+// block, then one frame (timing + image). `extra` goes just before the trailer; `tail` after it.
+const B = (...a) => Buffer.from(a)
+const LOOP = Buffer.concat([B(0x21, 0xff, 11), Buffer.from('NETSCAPE2.0'), B(3, 1, 0, 0, 0)])
+const FRAME = B(0x21, 0xf9, 4, 0, 8, 0, 0, 0, 0x2c, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 0x01, 0)
+const gif = ({ extra = Buffer.alloc(0), tail = Buffer.alloc(0), loop = LOOP } = {}) =>
+  Buffer.concat([Buffer.from('GIF89a'), B(1, 0, 1, 0, 0x80, 0, 0), B(0, 0, 0, 255, 255, 255), loop, FRAME, extra, B(0x3b), tail])
+const text = (label, words) => Buffer.concat([B(0x21, label, words.length), Buffer.from(words), B(0)])
 
-test('the demo GIF passes; a secret in its metadata, a fake GIF or a large GIF fails', () => {
+test('the demo GIF passes when it holds only frames', () => {
   const clean = tree({ 'media/demo.gif': gif() })
   assert.equal(run(clean).status, 0, run(clean).stderr)
-  const secret = tree({ 'media/demo.gif': gif(PLANTED['GitHub token']) })
+  rmSync(clean, { recursive: true })
+})
+
+const BAD_GIFS = {
+  'a comment block': gif({ extra: text(0xfe, PLANTED['GitHub token']) }),
+  'a text or unknown extension block': gif({ extra: text(0x01, 'hello there') }),
+  // the words split across sub-blocks, so no readable run is 6 characters long
+  'an application block other than the loop setting': gif({
+    extra: Buffer.concat([B(0x21, 0xff, 11), Buffer.from('XMP DataXMP'), B(4), Buffer.from('ab12'), B(4), Buffer.from('cd34'), B(0)]),
+  }),
+  'an application block other than the loop setting ': gif({ loop: Buffer.concat([LOOP.subarray(0, -1), B(5), Buffer.from('extra'), B(0)]) }),
+  'bytes after the end of the GIF': gif({ tail: Buffer.from('hidden') }),
+  'a GIF that ends early': gif().subarray(0, 30),
+  'not a GIF': Buffer.from('hello'),
+  'larger than 1000000': Buffer.concat([gif(), Buffer.alloc(1_000_001)]),
+}
+for (const [problem, bytes] of Object.entries(BAD_GIFS)) {
+  test(`a demo GIF with ${problem.trim()} fails`, () => {
+    const dir = tree({ 'media/demo.gif': bytes })
+    const r = run(dir)
+    assert.equal(r.status, 1, `${problem} was not caught`)
+    assert.match(r.stderr, new RegExp(`media/demo\\.gif: ${problem.trim()}`))
+    rmSync(dir, { recursive: true })
+  })
+}
+
+test('the comment block secret is also caught by the text scan, and only demo.gif is allowed', () => {
+  const secret = tree({ 'media/demo.gif': BAD_GIFS['a comment block'] })
   assert.match(run(secret).stderr, /media\/demo\.gif:\d+: GitHub token/)
-  const fake = tree({ 'media/demo.gif': 'hello' })
-  assert.match(run(fake).stderr, /not a GIF/)
-  const big = tree({ 'media/demo.gif': Buffer.concat([gif(), Buffer.alloc(3_000_001)]) })
-  assert.match(run(big).stderr, /larger than 3000000/)
   const other = tree({ 'media/other.gif': gif() })
   assert.match(run(other).stderr, /not an expected file/)
-  for (const d of [clean, secret, fake, big, other]) rmSync(d, { recursive: true })
+  for (const d of [secret, other]) rmSync(d, { recursive: true })
 })
 
 test('it fails on a file outside the layout, and on a large file', () => {
