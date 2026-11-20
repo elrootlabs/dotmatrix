@@ -16,7 +16,7 @@ Copy `src/` into your project, then mount an art on a canvas:
   import { arts, mountDots } from './src/index.mjs'
 
   const art = arts['chase-ring']
-  mountDots(document.getElementById('loader'), art.default, { color: '#FFB000' }, art.prepare)
+  mountDots(document.getElementById('loader'), art.default, { color: '#FFB000', autoSpacing: true }, art.prepare)
 </script>
 ```
 
@@ -46,12 +46,13 @@ export function Dots({ id, className, ...options }) {
 | `color` | `#A6E22E` | hex colour | Colour of the lit dots |
 | `color2` | none | hex colour | Colour of the dimmest dots; brightness blends from it to `color` |
 | `background` | transparent | hex colour | Fills the area behind the dots |
-| `grid` | `true` | | A faint ring at every dot position |
+| `grid` | `true` | | A faint ring at every dot position, light on a dark page and dark on a light one; it follows theme switches |
 | `speed` | `1` | 0 to 3 | 0 holds the art still |
 | `spacing` | `8` | pixels | Distance between dots; smaller is denser |
 | `size` | `1` | | Dot size |
 | `shape` | `round` | `round`, `square` | Dot shape |
 | `play` | `true` | | `false` holds a still frame |
+| `autoSpacing` | `false` | | On a canvas under 360 px, brings the dots closer (down to 3 px apart) so a small art keeps its shape |
 
 Marquee takes `text`, Clock takes `hour12`.
 
