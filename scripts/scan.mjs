@@ -66,8 +66,12 @@ const LAYOUT = [
   /^scripts\/(scan|lint)\.mjs$/,
   /^test\/[a-z0-9-]+\.mjs$/,
   /^examples\/index\.html$/,
+  /^media\/demo\.gif$/,
 ]
 const MAX_BYTES = 200_000
+const MAX_GIF_BYTES = 3_000_000
+/** The readable text inside a binary file, where metadata and comments would show. */
+const strings = (buf) => (buf.toString('latin1').match(/[\x20-\x7e]{6,}/g) ?? []).join('\n')
 // a workflow step pinned to an action's commit; also as a +/- line in a diff
 const PINNED = /^([+ -]?\s*(?:-\s*)?uses:\s*[\w./-]+@)[0-9a-f]{40}(?=\s|$)/
 
@@ -107,11 +111,15 @@ for (const file of files(root)) {
     problems.push(`${rel}: not an expected file`)
     continue
   }
-  if (statSync(file).size > MAX_BYTES) {
-    problems.push(`${rel}: larger than ${MAX_BYTES} bytes`)
+  const gif = rel.endsWith('.gif')
+  const max = gif ? MAX_GIF_BYTES : MAX_BYTES
+  if (statSync(file).size > max) {
+    problems.push(`${rel}: larger than ${max} bytes`)
     continue
   }
-  problems.push(...scanText(readFileSync(file, 'utf8'), rel))
+  const buf = readFileSync(file)
+  if (gif && !/^GIF8[79]a/.test(buf.toString('latin1', 0, 6))) problems.push(`${rel}: not a GIF`)
+  problems.push(...scanText(gif ? strings(buf) : buf.toString('utf8'), rel))
 }
 
 if (args.includes('--history')) {

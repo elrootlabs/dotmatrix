@@ -62,6 +62,29 @@ for (const [rule, value] of Object.entries(PLANTED)) {
   })
 }
 
+// a minimal GIF: header, a 1 x 1 screen, an optional comment block, then the end marker
+const gif = (comment = '') =>
+  Buffer.concat([
+    Buffer.from('GIF89a'),
+    Buffer.from([1, 0, 1, 0, 0, 0, 0]),
+    comment ? Buffer.concat([Buffer.from([0x21, 0xfe, comment.length]), Buffer.from(comment), Buffer.from([0])]) : Buffer.alloc(0),
+    Buffer.from([0x3b]),
+  ])
+
+test('the demo GIF passes; a secret in its metadata, a fake GIF or a large GIF fails', () => {
+  const clean = tree({ 'media/demo.gif': gif() })
+  assert.equal(run(clean).status, 0, run(clean).stderr)
+  const secret = tree({ 'media/demo.gif': gif(PLANTED['GitHub token']) })
+  assert.match(run(secret).stderr, /media\/demo\.gif:\d+: GitHub token/)
+  const fake = tree({ 'media/demo.gif': 'hello' })
+  assert.match(run(fake).stderr, /not a GIF/)
+  const big = tree({ 'media/demo.gif': Buffer.concat([gif(), Buffer.alloc(3_000_001)]) })
+  assert.match(run(big).stderr, /larger than 3000000/)
+  const other = tree({ 'media/other.gif': gif() })
+  assert.match(run(other).stderr, /not an expected file/)
+  for (const d of [clean, secret, fake, big, other]) rmSync(d, { recursive: true })
+})
+
 test('it fails on a file outside the layout, and on a large file', () => {
   const dir = tree({ 'notes.txt': 'x', 'README.md': 'x'.repeat(200_001) })
   const r = run(dir)

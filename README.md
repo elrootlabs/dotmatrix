@@ -1,5 +1,7 @@
 # Elroot Dot Matrix
 
+![Eight dot-matrix animations playing in a grid: Chase Ring, Equaliser, Turning Cube and Neural Net, then Done Tick, Ringed Planet, Fireworks and Sunrise, in lime, amber, cyan and coral dots on black](media/demo.gif)
+
 Dot-matrix animations for the web, drawn on a `<canvas>`: loaders, signals, 3D shapes, LED text, weather, space, celebrations and backgrounds. This repository holds the free arts, the small renderer that draws them, and nothing else: no dependencies, no build step, no network requests.
 
 Browse every art with a live preview at https://elrootlabs.com/opensource/dotmatrix.
