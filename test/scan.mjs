@@ -197,3 +197,18 @@ test('history: the owner account passes under its username or display name, othe
   assert.equal(commitAs(j('E', 'lroot Labs - Team')), 0)
   assert.equal(commitAs(j('E', 'lroot Someone')), 1)
 })
+
+test("history: GitHub's merge subject 'Merge pull request #N from owner/branch' passes", () => {
+  const email = j('272954373+e', 'lrootlabs@users.noreply.github.com')
+  const dir = tree({ 'README.md': '# Dot Matrix\n' })
+  const git = (...a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8' })
+  git('init', '-q')
+  git('add', '-A')
+  git('-c', j('user.name=e', 'lrootlabs'), '-c', `user.email=${email}`, 'commit', '-q', '-m', j('Merge pull request #2 from e', 'lrootlabs/desk-buddy'))
+  const ok = run(dir, '--history').status
+  git('-c', j('user.name=e', 'lrootlabs'), '-c', `user.email=${email}`, 'commit', '-q', '--allow-empty', '-m', j('see e', 'lrootlabs internal notes'))
+  const bad = run(dir, '--history').status
+  rmSync(dir, { recursive: true })
+  assert.equal(ok, 0)
+  assert.equal(bad, 1)
+})

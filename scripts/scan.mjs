@@ -192,7 +192,9 @@ if (args.includes('--history')) {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   })
-  problems.push(...scanText(log.replace(OWNER, '$1 (owner)'), 'history'))
+  // GitHub's own subject for a merged pull request names the branch as owner/branch
+  const MERGE_SUBJECT = new RegExp(j('^Merge pull request #\\d+ from ', BRAND, 'labs/[\\w.-]+$'), 'gm')
+  problems.push(...scanText(log.replace(OWNER, '$1 (owner)').replace(MERGE_SUBJECT, 'Merge pull request (subject)'), 'history'))
 }
 
 if (problems.length) {
