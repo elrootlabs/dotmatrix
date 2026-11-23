@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Desk buddy</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        color: #a6e22e;
+        font: 14px/1.4 ui-monospace, Menlo, monospace;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: calc(100vh - 28px);
+      }
+      p {
+        margin: 0;
+        height: 28px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="face" role="img" aria-label="Desk buddy face"></canvas>
+    <p id="mood">idle</p>
+    <script type="module">
+      import { mountDots } from '/src/runtime.mjs'
+      import face from '/buddy/face.mjs'
+
+      const label = document.getElementById('mood')
+      const dots = mountDots(document.getElementById('face'), face, { mood: 'idle', spacing: 12 })
+      // The server pushes each new mood; the browser reconnects by itself if it restarts.
+      new EventSource('/events').onmessage = (e) => {
+        dots.update({ mood: e.data, spacing: 12 })
+        label.textContent = e.data
+      }
+    </script>
+  </body>
+</html>

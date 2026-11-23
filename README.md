@@ -94,6 +94,12 @@ Each art draws at most 30 frames a second, groups its dots into eight brightness
 
 Elroot Dot Matrix has more arts at https://elrootlabs.com/opensource/dotmatrix. AI assistants can add any of them to a project through the MCP server at https://elrootlabs.com/mcp.
 
+## Desk buddy
+
+A face for your coding agent: it shows whether Claude Code is working, needs you, failed or finished.
+`node buddy/buddy.mjs`, add [`buddy/hooks.json`](buddy/hooks.json) to `.claude/settings.json`, open
+http://127.0.0.1:4747. Details in [buddy/README.md](buddy/README.md).
+
 ## Try it locally
 
 Serve the folder with any static web server and open `examples/index.html`, which shows every art.

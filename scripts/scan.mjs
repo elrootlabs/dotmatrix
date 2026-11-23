@@ -66,6 +66,8 @@ const LAYOUT = [
   /^scripts\/(scan|lint)\.mjs$/,
   /^test\/[a-z0-9-]+\.mjs$/,
   /^examples\/index\.html$/,
+  /^buddy\/(buddy|face)\.mjs$/,
+  /^buddy\/(index\.html|hooks\.json|README\.md)$/,
   /^media\/demo\.gif$/,
 ]
 const MAX_BYTES = 200_000
