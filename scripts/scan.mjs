@@ -29,7 +29,9 @@ const BRAND_OK = [
   j(BRAND, '-dotmatrix'),
 ]
 // The GitHub account that owns this repository, exactly as git records it as an author or committer.
-const OWNER = new RegExp(j('^(author|committer) ', BRAND, 'labs <\\d+\\+', BRAND, 'labs@users\\.noreply\\.github\\.com>$'), 'gm')
+// The owner's account: its username, or its display name (GitHub records that as the committer when it
+// rebase-merges a pull request), always with the account's own no-reply address.
+const OWNER = new RegExp(j('^(author|committer) (?:', BRAND, 'labs|E', BRAND.slice(1), ' Labs - Team) <\\d+\\+', BRAND, 'labs@users\\.noreply\\.github\\.com>$'), 'gm')
 // Addresses that may appear in commit metadata: GitHub's private no-reply addresses.
 const EMAIL_OK = [/@users\.noreply\.github\.com$/i, /^noreply@github\.com$/i, new RegExp(j('^nore', 'ply@anthr', 'opic\\.com$'), 'i')]
 
@@ -66,6 +68,8 @@ const LAYOUT = [
   /^scripts\/(scan|lint)\.mjs$/,
   /^test\/[a-z0-9-]+\.mjs$/,
   /^examples\/index\.html$/,
+  /^buddy\/(buddy|face)\.mjs$/,
+  /^buddy\/(index\.html|hooks\.json|README\.md)$/,
   /^media\/demo\.gif$/,
 ]
 const MAX_BYTES = 200_000

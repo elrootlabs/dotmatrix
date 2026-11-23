@@ -180,3 +180,20 @@ test('--history fails on a personal address in commit details, without printing 
   assert.ok(!r.stderr.includes(address) && !r.stderr.includes('someone.private'), 'the report shows the address')
   rmSync(dir, { recursive: true })
 })
+
+test('history: the owner account passes under its username or display name, other names do not', () => {
+  const email = j('272954373+e', 'lrootlabs@users.noreply.github.com')
+  const commitAs = (name) => {
+    const dir = tree({ 'README.md': '# Dot Matrix\n' })
+    const git = (...a) => execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8' })
+    git('init', '-q')
+    git('add', '-A')
+    git('-c', `user.name=${name}`, '-c', `user.email=${email}`, 'commit', '-q', '-m', 'x')
+    const r = run(dir, '--history')
+    rmSync(dir, { recursive: true })
+    return r.status
+  }
+  assert.equal(commitAs(j('e', 'lrootlabs')), 0)
+  assert.equal(commitAs(j('E', 'lroot Labs - Team')), 0)
+  assert.equal(commitAs(j('E', 'lroot Someone')), 1)
+})
